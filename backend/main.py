@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from routes import menu, orders, tables, toppings, admin, auth
+from backend.routes import menu, orders, tables, toppings, admin, auth
 
 app = FastAPI(title="1861 Public House Ordering System")
 
