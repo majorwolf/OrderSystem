@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kitchen Dashboard - 1861 Public House</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100">
+    <div class="container mx-auto px-4 py-8">
+        <header class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-gray-800">1861 Public House</h1>
+            <p class="text-xl text-gray-600">Kitchen Dashboard</p>
+        </header>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="ordersContainer">
+            <!-- Orders will be loaded here -->
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:8000/api';
+
+        // Load kitchen orders
+        async function loadOrders() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/orders/type/kitchen`);
+                const orders = await response.json();
+                displayOrders(orders);
+            } catch (error) {
+                console.error('Error loading orders:', error);
+            }
+        }
+
+        // Display orders
+        function displayOrders(orders) {
+            const container = document.getElementById('ordersContainer');
+            container.innerHTML = '';
+
+            orders.forEach(order => {
+                const orderCard = document.createElement('div');
+                orderCard.className = 'bg-white rounded-lg shadow-md p-4';
+                
+                let itemsHtml = '';
+                order.items.forEach(item => {
+                    itemsHtml += `
+                        <div class="mb-2 p-2 bg-gray-50 rounded">
+                            <div class="flex justify-between items-center">
+                                <span class="font-semibold">${item.name}</span>
+                                <span class="text-sm text-gray-600">Table ${order.table_number}</span>
+                            </div>
+                            <div class="text-sm text-gray-600">${order.last_name}</div>
+                            <div class="mt-2">
+                                <select class="w-full rounded border-gray-300" 
+                                        data-order-id="${order.id}" 
+                                        data-item-id="${item.id}"
+                                        onchange="updateStatus(this)">
+                                    <option value="new" ${item.status === 'new' ? 'selected' : ''}>New</option>
+                                    <option value="preparing" ${item.status === 'preparing' ? 'selected' : ''}>Preparing</option>
+                                    <option value="ready" ${item.status === 'ready' ? 'selected' : ''}>Ready</option>
+                                    <option value="delivered" ${item.status === 'delivered' ? 'selected' : ''}>Delivered</option>
+                                </select>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                orderCard.innerHTML = `
+                    <div class="mb-4">
+                        <h3 class="text-lg font-semibold">Order #${order.id}</h3>
+                        <p class="text-sm text-gray-600">${new Date(order.created_at).toLocaleString()}</p>
+                    </div>
+                    ${itemsHtml}
+                `;
+
+                container.appendChild(orderCard);
+            });
+        }
+
+        // Update order status
+        async function updateStatus(select) {
+            const orderId = select.dataset.orderId;
+            const itemId = select.dataset.itemId;
+            const status = select.value;
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/orders/${orderId}/status`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        item_id: itemId,
+                        status: status
+                    }),
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to update status');
+                }
+
+                // Reload orders to reflect changes
+                loadOrders();
+            } catch (error) {
+                console.error('Error updating status:', error);
+                alert('Failed to update status. Please try again.');
+            }
+        }
+
+        // Initialize
+        loadOrders();
+        // Refresh orders every 30 seconds
+        setInterval(loadOrders, 30000);
+    </script>
+</body>
+</html> 

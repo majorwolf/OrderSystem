@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Menu - 1861 Public House</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100">
+    <div class="container mx-auto px-4 py-8">
+        <header class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-gray-800">1861 Public House</h1>
+            <p class="text-xl text-gray-600">Menu</p>
+        </header>
+
+        <div class="flex justify-between items-center mb-6">
+            <div class="text-sm text-gray-600">Table #<span id="tableNumber">-</span></div>
+            <button id="viewCartBtn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded">
+                View Cart (<span id="cartCount">0</span>)
+            </button>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="menuItems">
+            <!-- Menu items will be loaded here -->
+        </div>
+    </div>
+
+    <!-- Cart Modal -->
+    <div id="cartModal" class="fixed inset-0 bg-black bg-opacity-50 hidden">
+        <div class="flex items-center justify-center min-h-screen">
+            <div class="bg-white rounded-lg p-6 max-w-2xl w-full mx-4">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-2xl font-semibold">Your Cart</h2>
+                    <button id="closeCartBtn" class="text-gray-500 hover:text-gray-700">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+                <div id="cartItems" class="mb-4">
+                    <!-- Cart items will be loaded here -->
+                </div>
+                <div class="flex justify-between items-center mb-4">
+                    <span class="text-lg font-semibold">Total:</span>
+                    <span id="cartTotal" class="text-lg font-semibold">$0.00</span>
+                </div>
+                <div class="mb-4">
+                    <label for="lastName" class="block text-sm font-medium text-gray-700">Last Name</label>
+                    <input type="text" id="lastName" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                </div>
+                <button id="submitOrderBtn" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded">
+                    Submit Order
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let cart = [];
+        const API_BASE_URL = 'http://localhost:8000/api';
+
+        // Load menu items
+        async function loadMenuItems() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/menu`);
+                const items = await response.json();
+                displayMenuItems(items);
+            } catch (error) {
+                console.error('Error loading menu items:', error);
+            }
+        }
+
+        // Display menu items
+        function displayMenuItems(items) {
+            const menuContainer = document.getElementById('menuItems');
+            menuContainer.innerHTML = '';
+
+            items.forEach(item => {
+                const itemCard = document.createElement('div');
+                itemCard.className = 'bg-white rounded-lg shadow-md p-4';
+                itemCard.innerHTML = `
+                    <h3 class="text-xl font-semibold mb-2">${item.name}</h3>
+                    <p class="text-gray-600 mb-2">${item.description || ''}</p>
+                    <div class="flex justify-between items-center">
+                        <span class="text-lg font-bold">$${item.price.toFixed(2)}</span>
+                        <button class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-1 px-3 rounded add-to-cart" data-id="${item.id}">
+                            Add to Cart
+                        </button>
+                    </div>
+                `;
+                menuContainer.appendChild(itemCard);
+            });
+
+            // Add event listeners to "Add to Cart" buttons
+            document.querySelectorAll('.add-to-cart').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    const itemId = parseInt(e.target.dataset.id);
+                    addToCart(itemId);
+                });
+            });
+        }
+
+        // Add item to cart
+        function addToCart(itemId) {
+            const item = menuItems.find(i => i.id === itemId);
+            if (item) {
+                cart.push(item);
+                updateCartCount();
+                showCart();
+            }
+        }
+
+        // Update cart count
+        function updateCartCount() {
+            document.getElementById('cartCount').textContent = cart.length;
+        }
+
+        // Show cart modal
+        function showCart() {
+            const modal = document.getElementById('cartModal');
+            modal.classList.remove('hidden');
+            updateCartDisplay();
+        }
+
+        // Hide cart modal
+        function hideCart() {
+            const modal = document.getElementById('cartModal');
+            modal.classList.add('hidden');
+        }
+
+        // Update cart display
+        function updateCartDisplay() {
+            const cartItemsContainer = document.getElementById('cartItems');
+            cartItemsContainer.innerHTML = '';
+
+            let total = 0;
+            cart.forEach(item => {
+                total += item.price;
+                const cartItem = document.createElement('div');
+                cartItem.className = 'flex justify-between items-center mb-2';
+                cartItem.innerHTML = `
+                    <span>${item.name}</span>
+                    <span>$${item.price.toFixed(2)}</span>
+                `;
+                cartItemsContainer.appendChild(cartItem);
+            });
+
+            document.getElementById('cartTotal').textContent = `$${total.toFixed(2)}`;
+        }
+
+        // Submit order
+        async function submitOrder() {
+            const lastName = document.getElementById('lastName').value.trim();
+            if (!lastName) {
+                alert('Please enter your last name');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/orders`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        table_id: currentTableId,
+                        last_name: lastName,
+                        items: cart
+                    }),
+                });
+
+                if (response.ok) {
+                    alert('Order submitted successfully!');
+                    cart = [];
+                    updateCartCount();
+                    hideCart();
+                } else {
+                    throw new Error('Failed to submit order');
+                }
+            } catch (error) {
+                console.error('Error submitting order:', error);
+                alert('Failed to submit order. Please try again.');
+            }
+        }
+
+        // Event listeners
+        document.getElementById('viewCartBtn').addEventListener('click', showCart);
+        document.getElementById('closeCartBtn').addEventListener('click', hideCart);
+        document.getElementById('submitOrderBtn').addEventListener('click', submitOrder);
+
+        // Initialize
+        let currentTableId = null;
+        let menuItems = [];
+
+        // Get table ID from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        currentTableId = urlParams.get('table_id');
+        if (currentTableId) {
+            document.getElementById('tableNumber').textContent = currentTableId;
+        }
+
+        // Load menu items
+        loadMenuItems();
+    </script>
+</body>
+</html> 
