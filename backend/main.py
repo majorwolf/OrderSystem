@@ -1,7 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-
-from .routes import menu, orders
+from routes import menu, orders, tables, toppings, admin, auth
 
 app = FastAPI(title="1861 Public House Ordering System")
 
@@ -15,8 +14,12 @@ app.add_middleware(
 )
 
 # Include routers
-app.include_router(menu.router)
-app.include_router(orders.router)
+app.include_router(menu.router, prefix="/admin/menu", tags=["menu"])
+app.include_router(orders.router, prefix="/admin/orders", tags=["orders"])
+app.include_router(tables.router, prefix="/admin/tables", tags=["tables"])
+app.include_router(toppings.router, prefix="/admin/toppings", tags=["toppings"])
+app.include_router(admin.router, prefix="/admin", tags=["admin"])
+app.include_router(auth.router, prefix="/admin/auth", tags=["auth"])
 
 @app.get("/")
 async def root():
