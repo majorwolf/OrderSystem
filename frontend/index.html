@@ -3,35 +3,76 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>1861 Public House Ordering System</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>1861 Public House - Menu</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
 <body class="bg-gray-100">
     <div class="container mx-auto px-4 py-8">
         <header class="text-center mb-8">
             <h1 class="text-4xl font-bold text-gray-800">1861 Public House</h1>
-            <p class="text-xl text-gray-600">Ordering System</p>
+            <p class="text-gray-600">Welcome to your table! Please browse our menu and place your order.</p>
         </header>
 
-        <main class="max-w-4xl mx-auto">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <!-- Menu Items -->
             <div class="bg-white rounded-lg shadow-md p-6">
-                <h2 class="text-2xl font-semibold mb-4">Welcome</h2>
-                <p class="text-gray-600 mb-4">Please scan the QR code at your table to begin ordering.</p>
-                
-                <div class="text-center">
-                    <button class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded">
-                        Scan QR Code
+                <h2 class="text-2xl font-semibold mb-4">Menu Items</h2>
+                <div id="menuItems" class="space-y-4">
+                    <!-- Menu items will be loaded here -->
+                </div>
+            </div>
+
+            <!-- Order Summary -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h2 class="text-2xl font-semibold mb-4">Your Order</h2>
+                <div id="orderSummary" class="space-y-4">
+                    <!-- Order items will be displayed here -->
+                </div>
+                <div class="mt-6">
+                    <button onclick="placeOrder()" class="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700">
+                        Place Order
                     </button>
                 </div>
             </div>
-        </main>
+        </div>
     </div>
 
     <script>
-        // Basic JavaScript functionality will be added here
-        document.addEventListener('DOMContentLoaded', () => {
-            console.log('Ordering system initialized');
-        });
+        // Load menu items when page loads
+        document.addEventListener('DOMContentLoaded', loadMenuItems);
+
+        async function loadMenuItems() {
+            try {
+                const response = await fetch('/api/menu');
+                const items = await response.json();
+                const menuItemsContainer = document.getElementById('menuItems');
+                
+                items.forEach(item => {
+                    const itemElement = document.createElement('div');
+                    itemElement.className = 'border-b pb-4';
+                    itemElement.innerHTML = `
+                        <h3 class="font-semibold">${item.name}</h3>
+                        <p class="text-gray-600">${item.description || ''}</p>
+                        <p class="text-green-600 font-semibold">$${item.price.toFixed(2)}</p>
+                        <button onclick="addToOrder(${item.id})" class="mt-2 bg-blue-600 text-white py-1 px-3 rounded-md hover:bg-blue-700">
+                            Add to Order
+                        </button>
+                    `;
+                    menuItemsContainer.appendChild(itemElement);
+                });
+            } catch (error) {
+                console.error('Error loading menu items:', error);
+            }
+        }
+
+        function addToOrder(itemId) {
+            // Implement add to order functionality
+        }
+
+        function placeOrder() {
+            // Implement place order functionality
+        }
     </script>
 </body>
 </html> 
